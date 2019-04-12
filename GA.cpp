@@ -1,33 +1,90 @@
 #include<iostream>
 #include<vector>
-#define totalPoints = 100
+#include<algorithm>
+#include "pathData.cpp"
+#include <cstdlib>
+
+#define numCities 8
+#define numElite 5
+#define numGen 20
+#define pop 10
+#define start 0
+
 using namespace std;
 
 class GA{
 private:
-  int startX;
-  int startY;
 
+  string cities[numCities];
+  int distances[numCities][numCities];
+
+  int startCity;
   int popSize;
 
-  int points[totalPoints][totalPoints];
+  int pathLength;
 
-  int pathMaxLength;   // total length of path
-
-  int amountEliete;
+  int amountElite;
   int stopGen;
+
+
 
   vector<pathData> population;
   vector<pathData> newPopulation;
 
 public:
   GA(){
-    popSize = 10;
-    pathMaxLength = 100;
+    srand(time(NULL));
+    amountElite = numElite;
+    stopGen = numGen;
+    pathLength = numCities+1;
+    popSize = pop;
+    startCity = start;
 
-    startX = 0;
-    startY = 0;
+    initialization();
+
+    for(int i =0; i< popSize;i++){
+      population[i].printPath();
+      cout << endl;
+    }
   }
 
+  void initialization(){
+    vector<int> tempPath;
 
+    for(int i =0; i< popSize;i++){
+      tempPath = ranPath();
+      pathData p(tempPath);
+      population.push_back(p);
+    }
+  }
+
+  /**
+   * generate unique random numbers for each GeneticAlgorithm.pathData in the initial population(generation 0)
+   */
+  vector<int> ranPath(){
+    vector<int> cityIndex;
+
+    cityIndex.push_back(startCity); // starting city
+
+    for (int i = 0; i < pathLength-2; i++) {
+        int ranNum = rand()%(numCities-1) + 1;
+        while(true){
+          if(find(cityIndex.begin(),cityIndex.end(),ranNum) !=cityIndex.end()){
+            ranNum = rand()%(numCities-1) + 1;
+          }else{
+            cityIndex.push_back(ranNum);
+            break;
+          }
+        }
+    }
+    cityIndex.push_back(startCity); // end city
+
+    return cityIndex;
+
+  }
+};
+
+int main(int argc, char const *argv[]) {
+  GA ga;
+  return 0;
 }
