@@ -4,6 +4,8 @@
 #include <string> // for string class
 #include <time.h>
 #include <vector>
+#include <utility>
+#include <algorithm>
 
 using namespace std;
 
@@ -20,7 +22,7 @@ class pathData {
 
     int getFitness() {return fitness;}
 
-    int setFitness(int fitness) {this->fitness = fitness;}
+    void setFitness(int fitness) {this->fitness = fitness;}
 
     vector<int> getPath() {return path;}
 
@@ -37,5 +39,11 @@ class pathData {
         return 0;
       else
         return 1;
+    }
+
+    bool operator<(pathData &o)const{
+      if(this->fitness > o.getFitness()){
+        return this->fitness > o.getFitness();
+      }
     }
 };
