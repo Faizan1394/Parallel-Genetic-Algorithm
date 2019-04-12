@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -20,7 +19,9 @@ class pathData {
     }
 
     int getFitness() {return fitness;}
+
     int setFitness(int fitness) {this->fitness = fitness;}
+
     vector<int> getPath() {return path;}
 
     void printPath() {
