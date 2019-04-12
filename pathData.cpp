@@ -1,9 +1,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include<iostream>
-#include<string> // for string class
-#include<time.h>
+#include <iostream>
+#include <string> // for string class
+#include <time.h>
 #include <vector>
 
 using namespace std;
