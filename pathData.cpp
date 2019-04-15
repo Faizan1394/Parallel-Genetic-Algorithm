@@ -19,6 +19,9 @@ class pathData {
       this->path = path;
       fitness = 0;
     }
+    pathData(){
+      
+    }
 
     int getFitness() {return fitness;}
 
@@ -32,18 +35,8 @@ class pathData {
       }
     }
 
-    int compareTo (pathData o) {
-      if(this->fitness < o.getFitness())
-        return -1;
-      else if (this->fitness == o.getFitness())
-        return 0;
-      else
-        return 1;
-    }
-
-    bool operator<(pathData &o)const{
-      if(this->fitness > o.getFitness()){
-        return this->fitness > o.getFitness();
-      }
+    bool operator < (pathData &o)const
+    {
+      return o.getFitness() < this->fitness ;
     }
 };

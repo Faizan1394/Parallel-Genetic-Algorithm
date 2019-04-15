@@ -2,18 +2,20 @@
 #include<vector>
 #include<algorithm>
 #include "pathData.cpp"
-#include "GUI.cpp"
+// #include "GUI.cpp"
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
-#include <omp.h>
+// #include <omp.h>
 #include <utility>
+#include <pthread.h>
 
 #define numCities 8
-#define numElite 5
-#define numGen 10
+#define numElite 2
+#define numGen 20
 #define pop 10
 #define start 0
+#define NTHREADS 4     // define number of threds to use
 
 using namespace std;
 
@@ -33,31 +35,35 @@ private:
 
   vector<pathData> population;
   vector<pathData> newPopulation;
-
+  int threadID;
 public:
-  GA(){
-    srand(time(NULL));
+  GA(int id){
+    threadID = id;
     amountElite = numElite;
     stopGen = numGen;
     pathLength = numCities+1;
     popSize = pop;
     startCity = start;
-    fileReader();
     initialization();
+    fileReader();
 
-    int gen = 0;
+    int gen = 1;
 
-    // while(gen < stopGen){
+    while(gen <= stopGen){
       evaluation();
       eliteSelection();
+
       crossover();
+
       printPopulation(gen);
 
-    //   population.clear();
-    //   population = newPopulation;
-    //   newPopulation.clear();
-    //   gen++;
-    // }
+
+
+      population.clear();
+      population = newPopulation;
+      newPopulation.clear();
+      gen++;
+    }
 
 
     // cout << "testing sorting by fitness" << endl;
@@ -72,7 +78,8 @@ public:
   }
 
   void printPopulation(int gen) {
-    cout << "\n\nGeneration" << gen << endl;
+    cout << "\nThread" << threadID << endl;
+    cout << "\nGeneration" << gen << endl;
       for (int i = 0; i < popSize; i++) {
         cout << i << ": ";
         population[i].printPath();
@@ -99,7 +106,7 @@ public:
         vector<int> tempPath;                      // used to temporarily hold the path
         tempPath = population[i].getPath();  // get the path
 
-        for (int j = 0; j < pathLength - 1; j++) {   // go through the entire path
+        for (int j = 0; j < pathLength-1; j++) {   // go through the entire path
             int cityX = tempPath[j];             // city at j
             int cityY = tempPath[j + 1];           // city the previous city connects to
             curPathL += distances[cityX][cityY]; // distance between the 2 cities
@@ -110,7 +117,6 @@ public:
         }
         population[i].setFitness(curPathL);
     }
-
     // go through all the lengths in fitness array
     int n = 0;
     for (int i = 0; i < popSize; i++) {
@@ -118,6 +124,7 @@ public:
         int m = maxLength - n;  // figure out the fitness of the specific path
         population[i].setFitness(m);
     }
+
 
     sort(population.begin(),population.end());
 
@@ -145,13 +152,13 @@ public:
       int candidatesFitness = 0;
 
       //get the top 50% of the candidates for selection based on there fitness levels
-      for (int i = 0; i < (int)(popSize / 2); i++) {
+      for (int i = 0; i < popSize / 2; i++) {
           candidates.push_back(population[i]);
           candidatesFitness += population[i].getFitness();
       }
 
 
-      double probability[popSize/2] ;
+      double probability[popSize/2];
 
 
       for (int i = 0; i < popSize / 2; i++) {
@@ -161,6 +168,7 @@ public:
 
       if (candidates.size() > 2) {
           vector<pathData> selectedCandidates;
+          // pathData selectedCandidates[2];
 
           //indexes of the two selected parents from the candidates
           int selectFirst = 0;
@@ -182,6 +190,8 @@ public:
               }
           }
 
+
+
           //pick the second candidates based on probability(randNum)
           randNum = (rand()%100)/100.0;    //generate a new random number
           startProb = 0;
@@ -192,7 +202,7 @@ public:
                   // generate a new random floating point number and check again
                   if (selectSecond == selectFirst) {
                       i = -1;
-                      randNum = (rand()%100)/100;
+                      randNum = (rand()%100)/100.0;
                       startProb = 0;
                   } else {
                       break;
@@ -201,6 +211,7 @@ public:
                   startProb += probability[i];
               }
           }
+
 
           // add the two selected candidates to the array to be returned
           selectedCandidates.push_back(candidates[selectFirst]);
@@ -239,6 +250,7 @@ public:
    */
   void crossover() {
       for (int repeat = amountElite; repeat < popSize; repeat++) {
+
           vector<pathData> parents = selection(); // get the two parents for selection
 
           int firstCut;
@@ -252,12 +264,26 @@ public:
           //keep looking for a second cut till second is more than firstCut
           while (secondCut <= firstCut) {
               firstCut = (int) (rand()%(pathLength) + 1);
-              secondCut = (int) (rand()%(pathLength - 1));
+              secondCut = (int) (rand()%(pathLength) - 1);
           }
+
+          // cout << "first cut" << firstCut << endl;
+          // cout << "second cut" << secondCut << endl;
+          // cout << endl;
+          // cout << endl;
+
 
 
 
           vector<int> firstParent = parents[0].getPath();
+
+          // for(auto i : firstParent){
+          //   cout << i << " ";
+          // }
+          //
+          // cout << endl;
+          // cout << endl;
+          // cout << endl;
 
 
 
@@ -272,6 +298,13 @@ public:
               }
           }
 
+          // for(auto i : inbetweenFirst){
+          //   cout << i  <<  " ";
+          // }
+          // cout << endl;
+          // cout << endl;
+          // cout << endl;
+
 
 
 
@@ -281,11 +314,18 @@ public:
           child[0] = firstParent[0];
           child[pathLength - 1] = firstParent[pathLength - 1];
 
+
           //copy the cities in between the two cuts into child
           for (int i = firstCut; i < secondCut; i++) {
               child[i] = firstParent[i];
           }
 
+          // for(auto i : child){
+          //     cout << i  <<  " ";
+          //   }
+          //   cout << endl;
+          //   cout << endl;
+          //   cout << endl;
 
           vector<int> secondParent = parents[1].getPath();
 
@@ -326,43 +366,62 @@ public:
 
           }
 
+
+
           vector<int> childVector;
           for(int i =0; i < pathLength;i++){
             childVector.push_back(child[i]);
           }
-          cout << endl;
-
 
           childVector = mutation(childVector);
 
           pathData p (childVector);
+
           newPopulation.push_back(p);
+
       }
   }
 
+
   /**
-   * generate unique random numbers for each GeneticAlgorithm.pathData in the initial population(generation 0)
+   * use the Fisher-Yates shuffel method to generate
+   * unique random numbers for each GeneticAlgorithm.pathData in the initial population(generation 0)
    */
-  vector<int> ranPath(){
-    vector<int> cityIndex;
+  vector<int> ranPath() {
+      //holds the index of all cities that can make up the GeneticAlgorithm.pathData except for the city that we start and end at
+      int cityIndex[pathLength - 2];
 
-    cityIndex.push_back(startCity); // starting city
-
-    for (int i = 0; i < pathLength-2; i++) {
-        int ranNum = rand()%(numCities-1) + 1;
-        while(true){
-          if(find(cityIndex.begin(),cityIndex.end(),ranNum) !=cityIndex.end()){
-            ranNum = rand()%(numCities-1) + 1;
-          }else{
-            cityIndex.push_back(ranNum);
-            break;
+      int index = 0;
+      //save indexes of all cities into the array cityIndex except for the city that we start and end at
+      for (int i = 0; i < (pathLength-2); i++) {
+          if (index == startCity) {
+              index++;
           }
-        }
-    }
-    cityIndex.push_back(startCity); // end city
+          cityIndex[i] = index;
 
-    return cityIndex;
+          index++;
+      }
 
+      for (int i = (pathLength-2) - 1; i > 0; i--) {
+          int ranNum = (int) (rand()%((i) + 1)); // random num between 0 and i
+          int temp = cityIndex[i];
+          cityIndex[i] = cityIndex[ranNum];
+          cityIndex[ranNum] = temp;
+      }
+
+      //add the start and end city to the GeneticAlgorithm.pathData
+      int fullPath[pathLength];
+      fullPath[0] = startCity;            // add the first to the start of GeneticAlgorithm.pathData
+      fullPath[pathLength - 1] = startCity; // add the last city to the end of GeneticAlgorithm.pathData
+      for (int j = 1; j < pathLength - 1; j++) {      // add the rest of the randomly picked cities in the middle
+          fullPath[j] = cityIndex[j - 1];
+      }
+      vector<int> p;
+      for(int i =0;i<pathLength;i++){
+        p.push_back(fullPath[i]);
+      }
+
+      return p;
   }
 
   void fileReader(){
@@ -412,9 +471,50 @@ public:
 
 };
 
+void *runGenetic(void *id) {
+  // cout << "Thread:" << (long)id;
+  GA ga((long)id);
+  pthread_exit(NULL); // terminate thread
+}
+
 int main(int argv, char** args) {
+  srand(time(NULL));
+
   // GUI gui;
   // gui.running();
-  GA ga;
+  int rc, i, j, detachstate;
+  pthread_t tid[NTHREADS]; // id of pthread
+  pthread_attr_t attr; // holds threads attributes
+
+  pthread_attr_init(&attr);  // initialize thread attributes with default values
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);  // set the detach state attribute of attr to joinable
+  for (j=0; j<NTHREADS; j++) {
+   /*
+   * create thread
+   * param1 : id of thread
+   * param2 : attributes of the thread
+   * param3 : function for thread to execute
+   * param4 : arguments to the function to be executed
+   * return 0 if created succesfully else 1
+   */
+  rc = pthread_create(&tid[j], &attr, runGenetic, (void *) j);
+
+  //if thread not created succesfully
+  if (rc) {
+    printf("ERROR; return code from pthread_create() is %d\n", rc);
+    exit(-1);
+  }
+  //RETURN 0 if succesfull
+  rc = pthread_join(tid[j], NULL);  // wait untill thread is done
+  if (rc) {
+    printf("ERROR; return code from pthread_join() is %d\n", rc);
+    exit(-1);
+    }
+  }
+
+  pthread_attr_destroy(&attr);  // destroy the attr object
+  pthread_exit(NULL);  //thread termination
+
+  // GA ga;
   return 0;
 }
